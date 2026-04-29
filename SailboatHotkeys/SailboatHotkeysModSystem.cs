@@ -28,7 +28,7 @@ namespace SailboatHotkeys
 
             clientApi = api;
 
-            boatMountTracker = new BoatMountTracker(Mod.Logger);
+            boatMountTracker = new BoatMountTracker(Mod.Logger, api);
             sailPositionClientSync = new SailPositionClientSync(
                 api.Network.GetChannel(ChannelName),
                 Mod.Logger
