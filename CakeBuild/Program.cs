@@ -100,10 +100,6 @@ public sealed class PackageTask : FrostingTask<BuildContext>
             $"../{BuildContext.ProjectName}/bin/{context.BuildConfiguration}/Mods/mod/publish/*",
             $"../Releases/{context.Name}"
         );
-        context.CopyDirectory(
-            $"../{BuildContext.ProjectName}/assets",
-            $"../Releases/{context.Name}/assets"
-        );
         context.CopyFile(
             $"../{BuildContext.ProjectName}/modinfo.json",
             $"../Releases/{context.Name}/modinfo.json"
