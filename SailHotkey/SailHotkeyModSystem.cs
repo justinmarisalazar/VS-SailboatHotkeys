@@ -11,50 +11,50 @@ using Vintagestory.GameContent;
 
 namespace SailHotkey
 {
+    [ProtoContract]
+    public class SailPositionPacket
+    {
+        [ProtoMember(1)]
+        public long BoatEntityId;
+
+        [ProtoMember(2)]
+        public int TargetSailPosition;
+    }
+
     public class SailHotkeyModSystem : ModSystem
     {
-        ICoreServerAPI scapi;
-        ICoreClientAPI ccapi;
-
-        IClientNetworkChannel clientChannel;
-
-        long boatEntityId = -1;
-
         // Called on server and client
         public override void Start(ICoreAPI api)
         {
             api.Network.RegisterChannel("sailhotkey").RegisterMessageType<SailPositionPacket>();
-            // TODO: test in core api
         }
 
-        public override void StartServerSide(ICoreServerAPI api)
-        {
-            Mod.Logger.Notification("Sail Hotkey Mod System started");
-            api.Network.GetChannel("sailhotkey")
-                .SetMessageHandler<SailPositionPacket>(OnServerReceivePacket);
-            scapi = api;
-        }
+        #region Client
+
+        ICoreClientAPI ccapi;
+        IClientNetworkChannel clientChannel;
+        long boatEntityId = -1;
 
         public override void StartClientSide(ICoreClientAPI api)
         {
             Mod.Logger.Notification("Sail Hotkey Mod System started");
 
             api.Input.RegisterHotKey(
-                "increaseSailSpeed",
-                "Increase Sail Speed",
+                "increaseSailPosition",
+                "Increase Sail Position",
                 GlKeys.W,
-                HotkeyType.GUIOrOtherControls,
+                HotkeyType.MovementControls,
                 ctrlPressed: true
             );
-            api.Input.SetHotKeyHandler("increaseSailSpeed", OnIncreaseSailSpeedHotkeyPressed);
+            api.Input.SetHotKeyHandler("increaseSailPosition", OnIncreaseSailPositionHotkeyPressed);
             api.Input.RegisterHotKey(
-                "decreaseSailSpeed",
-                "Decrease Sail Speed",
+                "decreaseSailPosition",
+                "Decrease Sail Position",
                 GlKeys.S,
-                HotkeyType.GUIOrOtherControls,
+                HotkeyType.MovementControls,
                 ctrlPressed: true
             );
-            api.Input.SetHotKeyHandler("decreaseSailSpeed", OnDecreaseSailSpeedHotkeyPressed);
+            api.Input.SetHotKeyHandler("decreaseSailPosition", OnDecreaseSailPositionHotkeyPressed);
 
             api.Event.EntityMounted += SetBoatEntityId;
             api.Event.EntityUnmounted += UnsetBoatEntityId;
@@ -63,10 +63,10 @@ namespace SailHotkey
             ccapi = api;
         }
 
-        private bool OnIncreaseSailSpeedHotkeyPressed(KeyCombination keyCombo)
+        private bool OnIncreaseSailPositionHotkeyPressed(KeyCombination keyCombo)
         {
             Mod.Logger.Debug(
-                "Increase sail speed hotkey pressed with key combination: " + keyCombo
+                "Increase sail position hotkey pressed with key combination: " + keyCombo
             );
             if (boatEntityId != -1)
             {
@@ -78,10 +78,10 @@ namespace SailHotkey
             return true; // Return true to indicate that the hotkey was handled
         }
 
-        private bool OnDecreaseSailSpeedHotkeyPressed(KeyCombination keyCombo)
+        private bool OnDecreaseSailPositionHotkeyPressed(KeyCombination keyCombo)
         {
             Mod.Logger.Debug(
-                "Decrease sail speed hotkey pressed with key combination: " + keyCombo
+                "Decrease sail position hotkey pressed with key combination: " + keyCombo
             );
             if (boatEntityId != -1)
             {
@@ -125,6 +125,20 @@ namespace SailHotkey
             };
         }
 
+        #endregion Client
+
+        #region Server
+
+        ICoreServerAPI scapi;
+
+        public override void StartServerSide(ICoreServerAPI api)
+        {
+            Mod.Logger.Notification("Sail Hotkey Mod System started");
+            api.Network.GetChannel("sailhotkey")
+                .SetMessageHandler<SailPositionPacket>(OnServerReceiveSailPositionPacket);
+            scapi = api;
+        }
+
         private void SyncSailPositionWithServer(SailPositionPacket packet)
         {
             try
@@ -134,10 +148,8 @@ namespace SailHotkey
             catch (Exception e)
             {
                 Mod.Logger.Error(
-                    "Failed to synchronize sail position: boat entity with id "
-                        + packet.BoatEntityId
-                        + " due to exception: "
-                        + e.ToString()
+                    $"Failed to synchronize sail position: boat entity with id {packet.BoatEntityId} due to "
+                        + $"exception: {e}"
                 );
             }
         }
@@ -147,7 +159,7 @@ namespace SailHotkey
             if (mountedSeat.MountSupplier.OnEntity is EntityBoat)
             {
                 boatEntityId = mountedSeat.MountSupplier.OnEntity.EntityId;
-                Mod.Logger.Debug("Set boatEntityId to: " + boatEntityId);
+                Mod.Logger.Debug($"Set boatEntityId to: {boatEntityId}");
             }
         }
 
@@ -160,30 +172,27 @@ namespace SailHotkey
             }
         }
 
-        private void OnServerReceivePacket(IServerPlayer fromPlayer, SailPositionPacket packet)
+        private void OnServerReceiveSailPositionPacket(
+            IServerPlayer fromPlayer,
+            SailPositionPacket packet
+        )
         {
             if (scapi.World.GetEntityById(packet.BoatEntityId) is not EntityBoat boatEntity)
             {
+                Mod.Logger.Warning(
+                    $"Received sail position packet but no such boat entity exists on the server"
+                        + $"(id: {packet.BoatEntityId}, player: {fromPlayer.PlayerName})"
+                );
                 return;
             }
 
             boatEntity.WatchedAttributes.SetInt("sailPosition", packet.TargetSailPosition);
             Mod.Logger.Debug(
-                "Synchronized sail position to: "
-                    + packet.TargetSailPosition
-                    + " for boat with id: "
-                    + packet.BoatEntityId
+                $"Synchronized sail position (position: {packet.TargetSailPosition}) for boat with "
+                    + $"id: {packet.BoatEntityId} from player: {fromPlayer.PlayerName}"
             );
         }
-    }
 
-    [ProtoContract]
-    public class SailPositionPacket
-    {
-        [ProtoMember(1)]
-        public long BoatEntityId;
-
-        [ProtoMember(2)]
-        public int TargetSailPosition;
+        #endregion Server
     }
 }
