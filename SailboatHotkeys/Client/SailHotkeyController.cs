@@ -29,7 +29,7 @@ namespace SailboatHotkeys.Client
         {
             clientApi.Input.RegisterHotKey(
                 MaxSailPositionHotkeyCode,
-                "[SailboatHotkeys] Set Max Sail Speed",
+                "[SailboatHotkeys] Fully unfurl sails",
                 GlKeys.W,
                 HotkeyType.CharacterControls,
                 ctrlPressed: true
@@ -41,7 +41,7 @@ namespace SailboatHotkeys.Client
 
             clientApi.Input.RegisterHotKey(
                 MinSailPositionHotkeyCode,
-                "[SailboatHotkeys] Set Min Sail Speed",
+                "[SailboatHotkeys] Fully furl sails",
                 GlKeys.S,
                 HotkeyType.CharacterControls,
                 ctrlPressed: true
@@ -53,7 +53,7 @@ namespace SailboatHotkeys.Client
 
             clientApi.Input.RegisterHotKey(
                 FurlUnfurlSailsHotkeyCode,
-                "[SailboatHotkeys] Furl/Unfurl Sails",
+                "[SailboatHotkeys] Furl/Unfurl sails",
                 GlKeys.V,
                 HotkeyType.CharacterControls
             );
@@ -64,7 +64,7 @@ namespace SailboatHotkeys.Client
 
             clientApi.Input.RegisterHotKey(
                 SwitchSeatHotkeyCode,
-                "[SailboatHotkeys] Switch Seat",
+                "[SailboatHotkeys] Switch seat",
                 GlKeys.B,
                 HotkeyType.CharacterControls
             );
