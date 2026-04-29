@@ -1,235 +1,68 @@
-﻿using System;
-using System.Linq;
-using ProtoBuf;
+﻿using SailboatHotkeys.Client;
+using SailboatHotkeys.Networking;
+using SailboatHotkeys.Server;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
-using Vintagestory.GameContent;
 
 namespace SailboatHotkeys
 {
-    [ProtoContract]
-    public class SailPositionPacket
-    {
-        [ProtoMember(1)]
-        public long BoatEntityId;
-
-        [ProtoMember(2)]
-        public int TargetSailPosition;
-    }
-
     public class SailboatHotkeysModSystem : ModSystem
     {
-        // Called on server and client
+        private const string ChannelName = "sailboatHotkeys";
+
+        private ICoreClientAPI clientApi;
+        private BoatMountTracker boatMountTracker;
+        private SailPositionClientSync sailPositionClientSync;
+        private SailHotkeyController sailHotkeyController;
+        private SailPositionServerHandler sailPositionServerHandler;
+
         public override void Start(ICoreAPI api)
         {
-            api.Network.RegisterChannel("sailboatHotkeys")
-                .RegisterMessageType<SailPositionPacket>();
+            api.Network.RegisterChannel(ChannelName).RegisterMessageType<SailPositionPacket>();
         }
-
-        #region Client
-
-        private const string MaxSailPositionHotkeyCode = "maxSailPosition";
-        private const string MinSailPositionHotkeyCode = "minSailPosition";
-        private const string FurlUnfurlSailsHotkeyCode = "furlUnfurlSails";
-        private static readonly int[] ValidSailPositions = [0, 1, 2];
-        private static readonly int MaxSailPosition = ValidSailPositions.Max();
-        private static readonly int MinSailPosition = ValidSailPositions.Min();
-
-        private ICoreClientAPI ccapi;
-        private IClientNetworkChannel clientChannel;
-        private long boatEntityId = -1;
-        private int lastSentSailPosition = -1; // track the last sent sail position to avoid redundant packets
 
         public override void StartClientSide(ICoreClientAPI api)
         {
             Mod.Logger.Notification("SailboatHotkeys Mod System started");
 
-            api.Input.RegisterHotKey(
-                MaxSailPositionHotkeyCode,
-                "[SailboatHotkeys] Set Max Sail Speed",
-                GlKeys.W,
-                HotkeyType.CharacterControls,
-                ctrlPressed: true
+            clientApi = api;
+
+            boatMountTracker = new BoatMountTracker(Mod.Logger);
+            sailPositionClientSync = new SailPositionClientSync(
+                api.Network.GetChannel(ChannelName),
+                Mod.Logger
             );
-            api.Input.SetHotKeyHandler(MaxSailPositionHotkeyCode, OnMaxSailPositionHotkeyPressed);
-            api.Input.RegisterHotKey(
-                MinSailPositionHotkeyCode,
-                "[SailboatHotkeys] Set Min Sail Speed",
-                GlKeys.S,
-                HotkeyType.CharacterControls,
-                ctrlPressed: true
+            sailHotkeyController = new SailHotkeyController(
+                api,
+                boatMountTracker,
+                sailPositionClientSync,
+                Mod.Logger
             );
-            api.Input.SetHotKeyHandler(MinSailPositionHotkeyCode, OnMinSailPositionHotkeyPressed);
-            api.Input.RegisterHotKey(
-                FurlUnfurlSailsHotkeyCode,
-                "[SailboatHotkeys] Furl/Unfurl Sails",
-                GlKeys.V,
-                HotkeyType.CharacterControls
-            );
-            api.Input.SetHotKeyHandler(FurlUnfurlSailsHotkeyCode, OnFurlUnfurlSailsHotkeyPressed);
 
-            api.Event.EntityMounted += SetBoatEntityId;
-            api.Event.EntityUnmounted += UnsetBoatEntityId;
-
-            clientChannel = api.Network.GetChannel("sailboatHotkeys");
-            ccapi = api;
+            api.Event.EntityMounted += boatMountTracker.OnEntityMounted;
+            api.Event.EntityUnmounted += boatMountTracker.OnEntityUnmounted;
+            sailHotkeyController.RegisterHotkeys();
         }
-
-        private bool OnMaxSailPositionHotkeyPressed(KeyCombination keyCombo)
-        {
-            if (boatEntityId != -1)
-            {
-                Mod.Logger.Debug(
-                    $"{MaxSailPositionHotkeyCode} hotkey pressed with key combination: {keyCombo}"
-                );
-                EntityBoat boatEntity = ccapi.World.GetEntityById(boatEntityId) as EntityBoat;
-                boatEntity.WatchedAttributes.SetInt("sailPosition", MaxSailPosition);
-                if (MaxSailPosition != lastSentSailPosition)
-                {
-                    SyncSailPositionWithServer(
-                        new SailPositionPacket
-                        {
-                            BoatEntityId = boatEntityId,
-                            TargetSailPosition = MaxSailPosition,
-                        }
-                    );
-                    lastSentSailPosition = MaxSailPosition;
-                }
-                Mod.Logger.Debug(
-                    $"Set sail position to max ({MaxSailPosition}) for boat with id: {boatEntityId}"
-                );
-            }
-            return true; // Return true to indicate that the hotkey was handled
-        }
-
-        private bool OnMinSailPositionHotkeyPressed(KeyCombination keyCombo)
-        {
-            if (boatEntityId != -1)
-            {
-                Mod.Logger.Debug(
-                    $"{MinSailPositionHotkeyCode} hotkey pressed with key combination: {keyCombo}"
-                );
-                EntityBoat boatEntity = ccapi.World.GetEntityById(boatEntityId) as EntityBoat;
-                boatEntity.WatchedAttributes.SetInt("sailPosition", MinSailPosition);
-                if (MinSailPosition != lastSentSailPosition)
-                {
-                    SyncSailPositionWithServer(
-                        new SailPositionPacket
-                        {
-                            BoatEntityId = boatEntityId,
-                            TargetSailPosition = MinSailPosition,
-                        }
-                    );
-                    lastSentSailPosition = MinSailPosition;
-                }
-                Mod.Logger.Debug(
-                    $"Set sail position to min ({MinSailPosition}) for boat with id: {boatEntityId}"
-                );
-            }
-            return true; // Return true to indicate that the hotkey was handled
-        }
-
-        private bool OnFurlUnfurlSailsHotkeyPressed(KeyCombination keyCombo)
-        {
-            if (boatEntityId != -1)
-            {
-                Mod.Logger.Debug(
-                    $"{FurlUnfurlSailsHotkeyCode} hotkey pressed with key combination: {keyCombo}"
-                );
-                EntityBoat boatEntity = ccapi.World.GetEntityById(boatEntityId) as EntityBoat;
-                int currentSailPosition = boatEntity.WatchedAttributes.GetInt("sailPosition");
-                int currentIndex = Array.IndexOf(ValidSailPositions, currentSailPosition);
-                if (currentIndex < 0)
-                    currentIndex = 0; // fallback if current value is unexpected
-
-                int nextIndex = (currentIndex + 1) % ValidSailPositions.Length;
-                int targetSailPosition = ValidSailPositions[nextIndex]; // cycle to the next sail position
-                boatEntity.WatchedAttributes.SetInt("sailPosition", targetSailPosition);
-                Mod.Logger.Debug(
-                    $"Set sail position to: {targetSailPosition} for boat with id: {boatEntityId}"
-                );
-                SyncSailPositionWithServer(
-                    new SailPositionPacket
-                    {
-                        BoatEntityId = boatEntityId,
-                        TargetSailPosition = targetSailPosition,
-                    }
-                );
-                lastSentSailPosition = targetSailPosition;
-            }
-            return true; // Return true to indicate that the hotkey was handled
-        }
-
-        private void SetBoatEntityId(EntityAgent mountingEntity, IMountableSeat mountedSeat)
-        {
-            if (mountedSeat.MountSupplier.OnEntity is EntityBoat)
-            {
-                boatEntityId = mountedSeat.MountSupplier.OnEntity.EntityId;
-                Mod.Logger.Debug($"Set boatEntityId to: {boatEntityId}");
-            }
-        }
-
-        private void UnsetBoatEntityId(EntityAgent mountingEntity, IMountableSeat mountedSeat)
-        {
-            if (mountedSeat.MountSupplier.OnEntity is EntityBoat)
-            {
-                boatEntityId = -1;
-                lastSentSailPosition = -1;
-                Mod.Logger.Debug("Unset boatEntityId and lastSentSailPosition");
-            }
-        }
-
-        private void SyncSailPositionWithServer(SailPositionPacket packet)
-        {
-            try
-            {
-                clientChannel.SendPacket(packet);
-            }
-            catch (Exception e)
-            {
-                Mod.Logger.Error(
-                    $"Failed to synchronize sail position: boat entity with id {packet.BoatEntityId} due to "
-                        + $"exception: {e}"
-                );
-            }
-        }
-
-        #endregion Client
-
-        #region Server
-
-        ICoreServerAPI scapi;
 
         public override void StartServerSide(ICoreServerAPI api)
         {
             Mod.Logger.Notification("SailboatHotkeys Mod System started");
-            api.Network.GetChannel("sailboatHotkeys")
-                .SetMessageHandler<SailPositionPacket>(OnServerReceiveSailPositionPacket);
-            scapi = api;
+            sailPositionServerHandler = new SailPositionServerHandler(api, Mod.Logger);
+            api.Network.GetChannel(ChannelName)
+                .SetMessageHandler<SailPositionPacket>(sailPositionServerHandler.HandlePacket);
         }
 
-        private void OnServerReceiveSailPositionPacket(
-            IServerPlayer fromPlayer,
-            SailPositionPacket packet
-        )
+        public override void Dispose()
         {
-            if (scapi.World.GetEntityById(packet.BoatEntityId) is not EntityBoat boatEntity)
+            if (clientApi != null && boatMountTracker != null)
             {
-                Mod.Logger.Warning(
-                    $"Received sail position packet but no such boat entity exists on the server"
-                        + $"(id: {packet.BoatEntityId}, player: {fromPlayer.PlayerName})"
-                );
-                return;
+                clientApi.Event.EntityMounted -= boatMountTracker.OnEntityMounted;
+                clientApi.Event.EntityUnmounted -= boatMountTracker.OnEntityUnmounted;
             }
 
-            boatEntity.WatchedAttributes.SetInt("sailPosition", packet.TargetSailPosition);
-            Mod.Logger.Debug(
-                $"Synchronized sail position (position: {packet.TargetSailPosition}, "
-                    + $"boat id: {packet.BoatEntityId}, player: {fromPlayer.PlayerName})"
-            );
+            sailPositionClientSync?.Reset();
+            base.Dispose();
         }
-
-        #endregion Server
     }
 }
