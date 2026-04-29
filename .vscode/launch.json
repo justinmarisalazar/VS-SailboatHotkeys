@@ -21,7 +21,7 @@
         // "--openWorld" , "modding test world",
         "--tracelog",
         "--addModPath",
-        "${workspaceFolder}/SailHotkey/bin/Debug/Mods"
+        "${workspaceFolder}/SailboatHotkeys/bin/Debug/Mods"
       ],
       "console": "internalConsole",
       "stopAtEntry": false
@@ -38,7 +38,7 @@
         "program": "${env:VINTAGE_STORY}/VintagestoryServer"
       },
       "preLaunchTask": "build",
-      "args": ["--tracelog", "--addModPath", "${workspaceFolder}/SailHotkey/bin/Debug/Mods"],
+      "args": ["--tracelog", "--addModPath", "${workspaceFolder}/SailboatHotkeys/bin/Debug/Mods"],
       "console": "internalConsole",
       "stopAtEntry": false
     },

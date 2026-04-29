@@ -5,7 +5,7 @@
       "label": "build",
       "command": "dotnet",
       "type": "process",
-      "args": ["build", "-c", "Debug", "${workspaceFolder}/SailHotkey/SailHotkey.csproj"],
+      "args": ["build", "-c", "Debug", "${workspaceFolder}/SailboatHotkeys/SailboatHotkeys.csproj"],
       "problemMatcher": "$msCompile"
     },
     {

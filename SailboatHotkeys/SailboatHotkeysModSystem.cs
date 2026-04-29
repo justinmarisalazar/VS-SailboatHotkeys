@@ -6,7 +6,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using Vintagestory.GameContent;
 
-namespace SailHotkey
+namespace SailboatHotkeys
 {
     [ProtoContract]
     public class SailPositionPacket
@@ -18,12 +18,13 @@ namespace SailHotkey
         public int TargetSailPosition;
     }
 
-    public class SailHotkeyModSystem : ModSystem
+    public class SailboatHotkeysModSystem : ModSystem
     {
         // Called on server and client
         public override void Start(ICoreAPI api)
         {
-            api.Network.RegisterChannel("sailhotkey").RegisterMessageType<SailPositionPacket>();
+            api.Network.RegisterChannel("sailboatHotkeys")
+                .RegisterMessageType<SailPositionPacket>();
         }
 
         #region Client
@@ -42,7 +43,7 @@ namespace SailHotkey
 
         public override void StartClientSide(ICoreClientAPI api)
         {
-            Mod.Logger.Notification("Sail Hotkey Mod System started");
+            Mod.Logger.Notification("SailboatHotkeys Mod System started");
 
             api.Input.RegisterHotKey(
                 MaxSailPositionHotkeyCode,
@@ -71,7 +72,7 @@ namespace SailHotkey
             api.Event.EntityMounted += SetBoatEntityId;
             api.Event.EntityUnmounted += UnsetBoatEntityId;
 
-            clientChannel = api.Network.GetChannel("sailhotkey");
+            clientChannel = api.Network.GetChannel("sailboatHotkeys");
             ccapi = api;
         }
 
@@ -202,8 +203,8 @@ namespace SailHotkey
 
         public override void StartServerSide(ICoreServerAPI api)
         {
-            Mod.Logger.Notification("Sail Hotkey Mod System started");
-            api.Network.GetChannel("sailhotkey")
+            Mod.Logger.Notification("SailboatHotkeys Mod System started");
+            api.Network.GetChannel("sailboatHotkeys")
                 .SetMessageHandler<SailPositionPacket>(OnServerReceiveSailPositionPacket);
             scapi = api;
         }

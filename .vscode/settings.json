@@ -1,5 +1,5 @@
 {
-  "dotnet.defaultSolution": "SailHotkey.sln",
+  "dotnet.defaultSolution": "SailboatHotkeys.sln",
   "files.associations": {
     "server-*.txt": "log",
     "client-*.txt": "log"
