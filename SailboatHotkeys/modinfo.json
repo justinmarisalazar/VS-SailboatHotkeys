@@ -1,9 +1,9 @@
 {
   "type": "code",
-  "modid": "sailhotkey",
+  "modid": "sailboathotkeys",
   "name": "SailboatHotkeys",
-  "authors": ["Memz"],
-  "description": "To be added",
+  "authors": ["memzuuu"],
+  "description": "Adds hotkeys for interacting with sailboats.",
   "version": "1.0.0",
   "dependencies": {
     "game": ""
