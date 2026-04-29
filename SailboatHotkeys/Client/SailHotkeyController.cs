@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using SailboatHotkeys.Domain;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
 namespace SailboatHotkeys.Client
