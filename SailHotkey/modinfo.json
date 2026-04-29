@@ -1,0 +1,11 @@
+{
+  "type": "code",
+  "modid": "sailhotkey",
+  "name": "Sail Hotkey",
+  "authors": ["Memz"],
+  "description": "To be added",
+  "version": "1.0.0",
+  "dependencies": {
+    "game": ""
+  }
+}
