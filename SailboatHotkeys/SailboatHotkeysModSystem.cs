@@ -47,25 +47,25 @@ namespace SailboatHotkeys
 
             api.Input.RegisterHotKey(
                 MaxSailPositionHotkeyCode,
-                "Set Max Sail Speed",
+                "[SailboatHotkeys] Set Max Sail Speed",
                 GlKeys.W,
-                HotkeyType.HelpAndOverlays,
+                HotkeyType.CharacterControls,
                 ctrlPressed: true
             );
             api.Input.SetHotKeyHandler(MaxSailPositionHotkeyCode, OnMaxSailPositionHotkeyPressed);
             api.Input.RegisterHotKey(
                 MinSailPositionHotkeyCode,
-                "Set Min Sail Speed",
+                "[SailboatHotkeys] Set Min Sail Speed",
                 GlKeys.S,
-                HotkeyType.HelpAndOverlays,
+                HotkeyType.CharacterControls,
                 ctrlPressed: true
             );
             api.Input.SetHotKeyHandler(MinSailPositionHotkeyCode, OnMinSailPositionHotkeyPressed);
             api.Input.RegisterHotKey(
                 FurlUnfurlSailsHotkeyCode,
-                "Furl/Unfurl Sails",
+                "[SailboatHotkeys] Furl/Unfurl Sails",
                 GlKeys.V,
-                HotkeyType.HelpAndOverlays
+                HotkeyType.CharacterControls
             );
             api.Input.SetHotKeyHandler(FurlUnfurlSailsHotkeyCode, OnFurlUnfurlSailsHotkeyPressed);
 
