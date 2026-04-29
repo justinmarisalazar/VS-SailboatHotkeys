@@ -70,8 +70,14 @@ namespace SailHotkey
             );
             if (boatEntityId != -1)
             {
-                SailPositionPacket packet = IncreaseSailPosition();
-                SyncSailPositionWithServer(packet);
+                int targetSailPosition = IncreaseSailPosition();
+                SyncSailPositionWithServer(
+                    new SailPositionPacket
+                    {
+                        BoatEntityId = boatEntityId,
+                        TargetSailPosition = targetSailPosition,
+                    }
+                );
             }
             else
                 Mod.Logger.Debug("boatEntityId is not set, skipping hotkey action");
@@ -85,44 +91,42 @@ namespace SailHotkey
             );
             if (boatEntityId != -1)
             {
-                SailPositionPacket packet = DecreaseSailPosition();
-                SyncSailPositionWithServer(packet);
+                int targetSailPosition = DecreaseSailPosition();
+                SyncSailPositionWithServer(
+                    new SailPositionPacket
+                    {
+                        BoatEntityId = boatEntityId,
+                        TargetSailPosition = targetSailPosition,
+                    }
+                );
             }
             else
                 Mod.Logger.Debug("boatEntityId is not set, skipping hotkey action");
             return true; // Return true to indicate that the hotkey was handled
         }
 
-        private SailPositionPacket IncreaseSailPosition()
+        private int IncreaseSailPosition()
         {
             EntityBoat boatEntity = ccapi.World.GetEntityById(boatEntityId) as EntityBoat;
             int currentSailPosition = boatEntity.WatchedAttributes.GetInt("sailPosition");
             int targetSailPosition = Math.Min(currentSailPosition + 1, 2);
             boatEntity.WatchedAttributes.SetInt("sailPosition", targetSailPosition);
             Mod.Logger.Debug(
-                "Set sail position to: " + targetSailPosition + " for boat with id: " + boatEntityId
+                $"Set sail position to: {targetSailPosition} for boat with id: {boatEntityId}"
             );
-            return new SailPositionPacket
-            {
-                BoatEntityId = boatEntityId,
-                TargetSailPosition = targetSailPosition,
-            };
+            return targetSailPosition;
         }
 
-        private SailPositionPacket DecreaseSailPosition()
+        private int DecreaseSailPosition()
         {
             EntityBoat boatEntity = ccapi.World.GetEntityById(boatEntityId) as EntityBoat;
             int currentSailPosition = boatEntity.WatchedAttributes.GetInt("sailPosition");
             int targetSailPosition = Math.Max(currentSailPosition - 1, 0);
             boatEntity.WatchedAttributes.SetInt("sailPosition", targetSailPosition);
             Mod.Logger.Debug(
-                "Set sail position to: " + targetSailPosition + " for boat with id: " + boatEntityId
+                $"Set sail position to: {targetSailPosition} for boat with id: {boatEntityId}"
             );
-            return new SailPositionPacket
-            {
-                BoatEntityId = boatEntityId,
-                TargetSailPosition = targetSailPosition,
-            };
+            return targetSailPosition;
         }
 
         #endregion Client
