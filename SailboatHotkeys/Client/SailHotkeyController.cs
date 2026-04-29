@@ -1,6 +1,9 @@
+using System;
+using System.Linq;
 using SailboatHotkeys.Domain;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
 namespace SailboatHotkeys.Client
@@ -15,6 +18,7 @@ namespace SailboatHotkeys.Client
         private const string MaxSailPositionHotkeyCode = "maxSailPosition";
         private const string MinSailPositionHotkeyCode = "minSailPosition";
         private const string FurlUnfurlSailsHotkeyCode = "furlUnfurlSails";
+        private const string SwitchSeatHotkeyCode = "switchSeat";
 
         private readonly ICoreClientAPI clientApi = clientApi;
         private readonly BoatMountTracker boatMountTracker = boatMountTracker;
@@ -57,6 +61,14 @@ namespace SailboatHotkeys.Client
                 FurlUnfurlSailsHotkeyCode,
                 OnFurlUnfurlSailsHotkeyPressed
             );
+
+            clientApi.Input.RegisterHotKey(
+                SwitchSeatHotkeyCode,
+                "[SailboatHotkeys] Switch Seat",
+                GlKeys.B,
+                HotkeyType.CharacterControls
+            );
+            clientApi.Input.SetHotKeyHandler(SwitchSeatHotkeyCode, OnSwitchSeatHotkeyPressed);
         }
 
         private bool OnMaxSailPositionHotkeyPressed(KeyCombination keyCombo)
@@ -101,6 +113,35 @@ namespace SailboatHotkeys.Client
             return true;
         }
 
+        private bool OnSwitchSeatHotkeyPressed(KeyCombination keyCombo)
+        {
+            if (!TryGetMountedBoat(out long boatEntityId, out EntityBoat boatEntity))
+            {
+                return true;
+            }
+
+            logger.Debug($"Switch seat hotkey pressed with key combination: {keyCombo}");
+
+            if (
+                !TryGetNextFreeSeat(
+                    boatMountTracker.MountedSeat.MountSupplier.Seats,
+                    boatMountTracker.MountedSeat,
+                    out IMountableSeat nextFreeSeat
+                )
+            )
+            {
+                logger.Debug("No free seat available to switch to.");
+                return true;
+            }
+
+            if (clientApi.World.Player.Entity.TryMount(nextFreeSeat))
+            {
+                logger.Debug($"Switched to seat {nextFreeSeat.SeatId}");
+            }
+
+            return true;
+        }
+
         private bool TryApplySailPosition(
             string hotkeyCode,
             int targetSailPosition,
@@ -137,6 +178,33 @@ namespace SailboatHotkeys.Client
             boatEntityId = boatMountTracker.BoatEntityId;
             boatEntity = clientApi.World.GetEntityById(boatEntityId) as EntityBoat;
             return boatEntity != null;
+        }
+
+        private static bool TryGetNextFreeSeat(
+            IMountableSeat[] seats,
+            IMountableSeat currentSeat,
+            out IMountableSeat nextFreeSeat
+        )
+        {
+            int currentIndex = Array.IndexOf(seats, currentSeat);
+            if (currentIndex < 0)
+            {
+                nextFreeSeat = null;
+                return false;
+            }
+
+            for (int i = 1; i < seats.Length; i++)
+            {
+                int candidateIndex = (currentIndex + i) % seats.Length;
+                if (seats[candidateIndex].Passenger == null)
+                {
+                    nextFreeSeat = seats[candidateIndex];
+                    return true;
+                }
+            }
+
+            nextFreeSeat = null;
+            return false;
         }
     }
 }

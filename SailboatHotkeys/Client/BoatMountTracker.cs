@@ -10,10 +10,13 @@ namespace SailboatHotkeys.Client
         private readonly ILogger logger = logger;
         private readonly ICoreClientAPI clientApi = clientApi;
         private long boatEntityId = NoBoatMounted;
+        private IMountableSeat mountedSeat = null;
 
         public long BoatEntityId => boatEntityId;
 
         public bool HasMountedBoat => boatEntityId != NoBoatMounted;
+
+        public IMountableSeat MountedSeat => mountedSeat;
 
         public void OnEntityMounted(EntityAgent mountingEntity, IMountableSeat mountedSeat)
         {
@@ -23,7 +26,10 @@ namespace SailboatHotkeys.Client
             )
             {
                 boatEntityId = boat.EntityId;
-                logger.Debug($"Set boatEntityId to: {boatEntityId}");
+                this.mountedSeat = mountedSeat;
+                logger.Debug(
+                    $"Set boatEntityId to: {boatEntityId} and mountedSeatId to: {mountedSeat.SeatId}"
+                );
             }
         }
 
@@ -35,7 +41,8 @@ namespace SailboatHotkeys.Client
             )
             {
                 boatEntityId = NoBoatMounted;
-                logger.Debug("Unset boatEntityId and mountedSeatId");
+                this.mountedSeat = null;
+                logger.Debug("Unset boatEntityId and mountedSeat");
             }
         }
     }
