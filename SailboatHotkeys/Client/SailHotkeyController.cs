@@ -10,6 +10,7 @@ namespace SailboatHotkeys.Client
         ICoreClientAPI clientApi,
         BoatMountTracker boatMountTracker,
         SailPositionClientSync sailPositionSync,
+        SwitchSeatClientSync switchSeatClientSync,
         ILogger logger
     )
     {
@@ -21,6 +22,7 @@ namespace SailboatHotkeys.Client
         private readonly ICoreClientAPI clientApi = clientApi;
         private readonly BoatMountTracker boatMountTracker = boatMountTracker;
         private readonly SailPositionClientSync sailPositionSync = sailPositionSync;
+        private readonly SwitchSeatClientSync switchSeatClientSync = switchSeatClientSync;
         private readonly ILogger logger = logger;
 
         public void RegisterHotkeys()
@@ -135,6 +137,7 @@ namespace SailboatHotkeys.Client
             if (clientApi.World.Player.Entity.TryMount(nextFreeSeat))
             {
                 logger.Debug($"Switched to seat {nextFreeSeat.SeatId}");
+                switchSeatClientSync.Sync(nextFreeSeat);
             }
 
             return true;
