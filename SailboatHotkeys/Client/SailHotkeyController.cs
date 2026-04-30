@@ -10,19 +10,19 @@ namespace SailboatHotkeys.Client
         ICoreClientAPI clientApi,
         BoatMountTracker boatMountTracker,
         SailPositionClientSync sailPositionSync,
-        SwitchSeatClientSync switchSeatClientSync,
+        ChangeSeatClientSync changeSeatClientSync,
         ILogger logger
     )
     {
         private const string MaxSailPositionHotkeyCode = "maxSailPosition";
         private const string MinSailPositionHotkeyCode = "minSailPosition";
         private const string FurlUnfurlSailsHotkeyCode = "furlUnfurlSails";
-        private const string SwitchSeatHotkeyCode = "switchSeat";
+        private const string ChangeSeatHotkeyCode = "changeSeat";
 
         private readonly ICoreClientAPI clientApi = clientApi;
         private readonly BoatMountTracker boatMountTracker = boatMountTracker;
         private readonly SailPositionClientSync sailPositionSync = sailPositionSync;
-        private readonly SwitchSeatClientSync switchSeatClientSync = switchSeatClientSync;
+        private readonly ChangeSeatClientSync changeSeatClientSync = changeSeatClientSync;
         private readonly ILogger logger = logger;
 
         public void RegisterHotkeys()
@@ -63,12 +63,12 @@ namespace SailboatHotkeys.Client
             );
 
             clientApi.Input.RegisterHotKey(
-                SwitchSeatHotkeyCode,
-                "[SailboatHotkeys] Switch seat",
+                ChangeSeatHotkeyCode,
+                "[SailboatHotkeys] Change seat",
                 GlKeys.B,
                 HotkeyType.CharacterControls
             );
-            clientApi.Input.SetHotKeyHandler(SwitchSeatHotkeyCode, OnSwitchSeatHotkeyPressed);
+            clientApi.Input.SetHotKeyHandler(ChangeSeatHotkeyCode, OnChangeSeatHotkeyPressed);
         }
 
         private bool OnMaxSailPositionHotkeyPressed(KeyCombination keyCombo)
@@ -113,14 +113,14 @@ namespace SailboatHotkeys.Client
             return true;
         }
 
-        private bool OnSwitchSeatHotkeyPressed(KeyCombination keyCombo)
+        private bool OnChangeSeatHotkeyPressed(KeyCombination keyCombo)
         {
             if (!TryGetMountedBoat(out long boatEntityId, out EntityBoat boatEntity))
             {
                 return true;
             }
 
-            logger.Debug($"Switch seat hotkey pressed with key combination: {keyCombo}");
+            logger.Debug($"Change seat hotkey pressed with key combination: {keyCombo}");
 
             if (
                 !TryGetNextFreeSeat(
@@ -137,7 +137,7 @@ namespace SailboatHotkeys.Client
             if (clientApi.World.Player.Entity.TryMount(nextFreeSeat))
             {
                 logger.Debug($"Switched to seat {nextFreeSeat.SeatId}");
-                switchSeatClientSync.Sync(nextFreeSeat);
+                changeSeatClientSync.Sync(nextFreeSeat);
             }
 
             return true;

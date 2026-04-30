@@ -5,14 +5,14 @@ using Vintagestory.API.Common;
 
 namespace SailboatHotkeys.Client
 {
-    public sealed class SwitchSeatClientSync(IClientNetworkChannel clientChannel, ILogger logger)
+    public sealed class ChangeSeatClientSync(IClientNetworkChannel clientChannel, ILogger logger)
     {
         private readonly IClientNetworkChannel clientChannel = clientChannel;
         private readonly ILogger logger = logger;
 
         public void Sync(IMountableSeat targetSeat)
         {
-            var packet = new SwitchSeatPacket
+            var packet = new ChangeSeatPacket
             {
                 BoatEntityId = targetSeat.MountSupplier.OnEntity.EntityId,
                 TargetSeatId = targetSeat.SeatId,

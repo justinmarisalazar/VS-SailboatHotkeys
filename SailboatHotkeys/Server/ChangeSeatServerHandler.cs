@@ -6,12 +6,12 @@ using Vintagestory.GameContent;
 
 namespace SailboatHotkeys.Server
 {
-    public sealed class SwitchSeatServerHandler(ICoreServerAPI serverApi, ILogger logger)
+    public sealed class ChangeSeatServerHandler(ICoreServerAPI serverApi, ILogger logger)
     {
         private readonly ICoreServerAPI serverApi = serverApi;
         private readonly ILogger logger = logger;
 
-        public void HandlePacket(IServerPlayer fromPlayer, SwitchSeatPacket packet)
+        public void HandlePacket(IServerPlayer fromPlayer, ChangeSeatPacket packet)
         {
             if (serverApi.World.GetEntityById(packet.BoatEntityId) is not EntityBoat boatEntity)
             {

@@ -14,16 +14,16 @@ namespace SailboatHotkeys
         private ICoreClientAPI clientApi;
         private BoatMountTracker boatMountTracker;
         private SailPositionClientSync sailPositionClientSync;
-        private SwitchSeatClientSync switchSeatClientSync;
+        private ChangeSeatClientSync changeSeatClientSync;
         private SailHotkeyController sailHotkeyController;
         private SailPositionServerHandler sailPositionServerHandler;
-        private SwitchSeatServerHandler switchSeatServerHandler;
+        private ChangeSeatServerHandler changeSeatServerHandler;
 
         public override void Start(ICoreAPI api)
         {
             api.Network.RegisterChannel(ChannelName)
                 .RegisterMessageType<SailPositionPacket>()
-                .RegisterMessageType<SwitchSeatPacket>();
+                .RegisterMessageType<ChangeSeatPacket>();
         }
 
         public override void StartClientSide(ICoreClientAPI api)
@@ -37,7 +37,7 @@ namespace SailboatHotkeys
                 api.Network.GetChannel(ChannelName),
                 Mod.Logger
             );
-            switchSeatClientSync = new SwitchSeatClientSync(
+            changeSeatClientSync = new ChangeSeatClientSync(
                 api.Network.GetChannel(ChannelName),
                 Mod.Logger
             );
@@ -45,7 +45,7 @@ namespace SailboatHotkeys
                 api,
                 boatMountTracker,
                 sailPositionClientSync,
-                switchSeatClientSync,
+                changeSeatClientSync,
                 Mod.Logger
             );
 
@@ -58,10 +58,10 @@ namespace SailboatHotkeys
         {
             Mod.Logger.Notification("SailboatHotkeys Mod System started");
             sailPositionServerHandler = new SailPositionServerHandler(api, Mod.Logger);
-            switchSeatServerHandler = new SwitchSeatServerHandler(api, Mod.Logger);
+            changeSeatServerHandler = new ChangeSeatServerHandler(api, Mod.Logger);
             api.Network.GetChannel(ChannelName)
                 .SetMessageHandler<SailPositionPacket>(sailPositionServerHandler.HandlePacket)
-                .SetMessageHandler<SwitchSeatPacket>(switchSeatServerHandler.HandlePacket);
+                .SetMessageHandler<ChangeSeatPacket>(changeSeatServerHandler.HandlePacket);
         }
 
         public override void Dispose()
