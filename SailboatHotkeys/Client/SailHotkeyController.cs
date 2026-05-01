@@ -17,7 +17,8 @@ namespace SailboatHotkeys.Client
         private const string MaxSailPositionHotkeyCode = "maxSailPosition";
         private const string MinSailPositionHotkeyCode = "minSailPosition";
         private const string FurlUnfurlSailsHotkeyCode = "furlUnfurlSails";
-        private const string ChangeSeatHotkeyCode = "changeSeat";
+        private const string SwitchNextSeatHotkeyCode = "switchNextSeat";
+        private const string SwitchPrevSeatHotkeyCode = "switchPrevSeat";
 
         private readonly ICoreClientAPI clientApi = clientApi;
         private readonly BoatMountTracker boatMountTracker = boatMountTracker;
@@ -63,12 +64,26 @@ namespace SailboatHotkeys.Client
             );
 
             clientApi.Input.RegisterHotKey(
-                ChangeSeatHotkeyCode,
-                "[SailboatHotkeys] Change seat",
+                SwitchPrevSeatHotkeyCode,
+                "[SailboatHotkeys] Switch to previous seat",
                 GlKeys.B,
                 HotkeyType.CharacterControls
             );
-            clientApi.Input.SetHotKeyHandler(ChangeSeatHotkeyCode, OnChangeSeatHotkeyPressed);
+            clientApi.Input.SetHotKeyHandler(
+                SwitchPrevSeatHotkeyCode,
+                OnSwitchPrevSeatHotkeyPressed
+            );
+
+            clientApi.Input.RegisterHotKey(
+                SwitchNextSeatHotkeyCode,
+                "[SailboatHotkeys] Switch to next seat",
+                GlKeys.N,
+                HotkeyType.CharacterControls
+            );
+            clientApi.Input.SetHotKeyHandler(
+                SwitchNextSeatHotkeyCode,
+                OnSwitchNextSeatHotkeyPressed
+            );
         }
 
         private bool OnMaxSailPositionHotkeyPressed(KeyCombination keyCombo)
@@ -113,34 +128,30 @@ namespace SailboatHotkeys.Client
             return true;
         }
 
-        private bool OnChangeSeatHotkeyPressed(KeyCombination keyCombo)
+        private bool OnSwitchPrevSeatHotkeyPressed(KeyCombination keyCombo)
         {
-            if (!TryGetMountedBoat(out long boatEntityId, out EntityBoat boatEntity))
+            if (!boatMountTracker.HasMountedBoat)
             {
                 return true;
             }
 
-            logger.Debug($"Change seat hotkey pressed with key combination: {keyCombo}");
+            logger.Debug(
+                $"{SwitchPrevSeatHotkeyCode} hotkey pressed with key combination: {keyCombo}"
+            );
+            return TryChangeSeat("previous");
+        }
 
-            if (
-                !TryGetNextFreeSeat(
-                    boatMountTracker.MountedSeat.MountSupplier.Seats,
-                    boatMountTracker.MountedSeat,
-                    out IMountableSeat nextFreeSeat
-                )
-            )
+        private bool OnSwitchNextSeatHotkeyPressed(KeyCombination keyCombo)
+        {
+            if (!boatMountTracker.HasMountedBoat)
             {
-                logger.Debug("No free seat available to switch to.");
                 return true;
             }
 
-            if (clientApi.World.Player.Entity.TryMount(nextFreeSeat))
-            {
-                logger.Debug($"Switched to seat {nextFreeSeat.SeatId}");
-                changeSeatClientSync.Sync(nextFreeSeat);
-            }
-
-            return true;
+            logger.Debug(
+                $"{SwitchNextSeatHotkeyCode} hotkey pressed with key combination: {keyCombo}"
+            );
+            return TryChangeSeat("next");
         }
 
         private bool TryApplySailPosition(
@@ -181,31 +192,71 @@ namespace SailboatHotkeys.Client
             return boatEntity != null;
         }
 
-        private static bool TryGetNextFreeSeat(
+        private static bool TryGetFreeSeat(
+            string direction,
             IMountableSeat[] seats,
             IMountableSeat currentSeat,
-            out IMountableSeat nextFreeSeat
+            out IMountableSeat freeSeat
         )
         {
             int currentIndex = Array.IndexOf(seats, currentSeat);
             if (currentIndex < 0)
             {
-                nextFreeSeat = null;
+                freeSeat = null;
                 return false;
             }
 
-            for (int i = 1; i < seats.Length; i++)
+            if ("previous".Equals(direction, StringComparison.OrdinalIgnoreCase))
             {
-                int candidateIndex = (currentIndex + i) % seats.Length;
-                if (seats[candidateIndex].Passenger == null)
+                for (int i = 1; i < seats.Length; i++)
                 {
-                    nextFreeSeat = seats[candidateIndex];
-                    return true;
+                    int candidateIndex = (currentIndex - i + seats.Length) % seats.Length;
+                    if (seats[candidateIndex].Passenger == null)
+                    {
+                        freeSeat = seats[candidateIndex];
+                        return true;
+                    }
+                }
+            }
+            else if ("next".Equals(direction, StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 1; i < seats.Length; i++)
+                {
+                    int candidateIndex = (currentIndex + i) % seats.Length;
+                    if (seats[candidateIndex].Passenger == null)
+                    {
+                        freeSeat = seats[candidateIndex];
+                        return true;
+                    }
                 }
             }
 
-            nextFreeSeat = null;
+            freeSeat = null;
             return false;
+        }
+
+        private bool TryChangeSeat(string direction)
+        {
+            if (
+                !TryGetFreeSeat(
+                    direction,
+                    boatMountTracker.MountedSeat.MountSupplier.Seats,
+                    boatMountTracker.MountedSeat,
+                    out IMountableSeat freeSeat
+                )
+            )
+            {
+                logger.Debug("No free seat available to switch to.");
+                return true;
+            }
+
+            if (clientApi.World.Player.Entity.TryMount(freeSeat))
+            {
+                logger.Debug($"Switched to seat {freeSeat.SeatId}");
+                changeSeatClientSync.Sync(freeSeat);
+            }
+
+            return true;
         }
     }
 }
