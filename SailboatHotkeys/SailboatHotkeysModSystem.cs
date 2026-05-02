@@ -15,7 +15,7 @@ namespace SailboatHotkeys
         private BoatMountTracker boatMountTracker;
         private SailPositionClientSync sailPositionClientSync;
         private ChangeSeatClientSync changeSeatClientSync;
-        private SailHotkeyController sailHotkeyController;
+        private SailboatHotkeyController sailHotkeyController;
         private SailPositionServerHandler sailPositionServerHandler;
         private ChangeSeatServerHandler changeSeatServerHandler;
 
@@ -41,7 +41,7 @@ namespace SailboatHotkeys
                 api.Network.GetChannel(ChannelName),
                 Mod.Logger
             );
-            sailHotkeyController = new SailHotkeyController(
+            sailHotkeyController = new SailboatHotkeyController(
                 api,
                 boatMountTracker,
                 sailPositionClientSync,

@@ -6,7 +6,7 @@ using Vintagestory.GameContent;
 
 namespace SailboatHotkeys.Client
 {
-    public sealed class SailHotkeyController(
+    public sealed class SailboatHotkeyController(
         ICoreClientAPI clientApi,
         BoatMountTracker boatMountTracker,
         SailPositionClientSync sailPositionSync,
@@ -107,9 +107,7 @@ namespace SailboatHotkeys.Client
         private bool OnFurlUnfurlSailsHotkeyPressed(KeyCombination keyCombo)
         {
             if (!TryGetMountedBoat(out long boatEntityId, out EntityBoat boatEntity))
-            {
-                return true;
-            }
+                return false;
 
             logger.Debug(
                 $"{FurlUnfurlSailsHotkeyCode} hotkey pressed with key combination: {keyCombo}"
@@ -131,9 +129,7 @@ namespace SailboatHotkeys.Client
         private bool OnSwitchPrevSeatHotkeyPressed(KeyCombination keyCombo)
         {
             if (!boatMountTracker.HasMountedBoat)
-            {
-                return true;
-            }
+                return false;
 
             logger.Debug(
                 $"{SwitchPrevSeatHotkeyCode} hotkey pressed with key combination: {keyCombo}"
@@ -144,9 +140,7 @@ namespace SailboatHotkeys.Client
         private bool OnSwitchNextSeatHotkeyPressed(KeyCombination keyCombo)
         {
             if (!boatMountTracker.HasMountedBoat)
-            {
-                return true;
-            }
+                return false;
 
             logger.Debug(
                 $"{SwitchNextSeatHotkeyCode} hotkey pressed with key combination: {keyCombo}"
@@ -161,9 +155,7 @@ namespace SailboatHotkeys.Client
         )
         {
             if (!TryGetMountedBoat(out long boatEntityId, out EntityBoat boatEntity))
-            {
-                return true;
-            }
+                return false;
 
             logger.Debug($"{hotkeyCode} hotkey pressed with key combination: {keyCombo}");
 
@@ -183,9 +175,7 @@ namespace SailboatHotkeys.Client
             boatEntity = null;
 
             if (!boatMountTracker.HasMountedBoat)
-            {
                 return false;
-            }
 
             boatEntityId = boatMountTracker.BoatEntityId;
             boatEntity = clientApi.World.GetEntityById(boatEntityId) as EntityBoat;
@@ -247,7 +237,7 @@ namespace SailboatHotkeys.Client
             )
             {
                 logger.Debug("No free seat available to switch to.");
-                return true;
+                return false;
             }
 
             if (clientApi.World.Player.Entity.TryMount(freeSeat))
