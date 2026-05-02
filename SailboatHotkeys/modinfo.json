@@ -6,6 +6,6 @@
   "description": "Adds hotkeys for interacting with sailboats.",
   "version": "1.0.0",
   "dependencies": {
-    "game": ""
+    "game": "1.22.1"
   }
 }

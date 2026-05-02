@@ -26,6 +26,8 @@ public class BuildContext : FrostingContext
     public string BuildConfiguration { get; set; }
     public string Version { get; }
     public string Name { get; }
+    public string GameVersion { get; }
+    public string Author { get; }
     public bool SkipJsonValidation { get; set; }
 
     public BuildContext(ICakeContext context)
@@ -38,6 +40,18 @@ public class BuildContext : FrostingContext
         );
         Version = modInfo.Version;
         Name = modInfo.ModID;
+        foreach (var dependency in modInfo.Dependencies)
+        {
+            if (dependency.ModID == "game")
+            {
+                GameVersion = dependency.Version;
+            }
+        }
+        foreach (var author in modInfo.Authors)
+        {
+            Author = author;
+            break;
+        }
     }
 }
 
@@ -93,28 +107,27 @@ public sealed class PackageTask : FrostingTask<BuildContext>
 {
     public override void Run(BuildContext context)
     {
+        string releaseDir =
+            $"../Releases/{context.Author}{context.Name}-v{context.Version}_v{context.GameVersion}";
         context.EnsureDirectoryExists("../Releases");
         context.CleanDirectory("../Releases");
-        context.EnsureDirectoryExists($"../Releases/{context.Name}");
+        context.EnsureDirectoryExists(releaseDir);
         context.CopyFiles(
             $"../{BuildContext.ProjectName}/bin/{context.BuildConfiguration}/Mods/mod/publish/*",
-            $"../Releases/{context.Name}"
+            releaseDir
         );
         context.CopyFile(
             $"../{BuildContext.ProjectName}/modinfo.json",
-            $"../Releases/{context.Name}/modinfo.json"
+            $"{releaseDir}/modinfo.json"
         );
         if (context.FileExists($"../{BuildContext.ProjectName}/modicon.png"))
         {
             context.CopyFile(
                 $"../{BuildContext.ProjectName}/modicon.png",
-                $"../Releases/{context.Name}/modicon.png"
+                $"{releaseDir}/modicon.png"
             );
         }
-        context.Zip(
-            $"../Releases/{context.Name}",
-            $"../Releases/{context.Name}_{context.Version}.zip"
-        );
+        context.Zip(releaseDir, $"{releaseDir}.zip");
     }
 }
 
